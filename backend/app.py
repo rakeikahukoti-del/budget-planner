@@ -1,6 +1,12 @@
 from flask_cors import CORS
 from flask import Flask, jsonify, request
-from database import get_transactions, add_transaction, get_summary, get_category_summary
+from database import (
+    get_transactions,
+    add_transaction,
+    delete_transaction,
+    get_summary,
+    get_category_summary,
+)
 
 app = Flask(__name__)
 CORS(app)
@@ -31,22 +37,22 @@ def add_trans():
 
     if not data:
         return jsonify({"error": "No data provided"}), 400
-    
+
     required_fields = ["type", "name", "category", "amount", "date"]
 
     for field in required_fields:
         if field not in data or data[field] == "":
             return jsonify({"error": f"Missing field: {field}"}), 400
 
-    if data["type"]not in ["income", "expense"]:
+    if data["type"] not in ["income", "expense"]:
         return jsonify({"error": "Incorrect transaction type"}), 400
-    
+
     try:
         amount = float(data["amount"])
 
     except ValueError:
-        return jsonify({"error": "Amouunt must be a valid number"}), 400
-    
+        return jsonify({"error": "Amount must be a valid number"}), 400
+
     if amount <= 0:
         return jsonify({"error": "Amount must be a positive number"}), 400
 
@@ -58,7 +64,7 @@ def add_trans():
         amount,
         data["date"]
     )
-    
+
     return jsonify({
         "message": "Transaction added",
         "data": {
@@ -71,164 +77,15 @@ def add_trans():
     }), 201
 
 
+@app.route("/transactions/<int:transaction_id>", methods=["DELETE"])
+def remove_trans(transaction_id):
+    deleted = delete_transaction(transaction_id)
+
+    if not deleted:
+        return jsonify({"error": "Transaction not found"}), 404
+
+    return jsonify({"message": "Transaction deleted"}), 200
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5050, debug=True)
-
-""" 
-
-transactions = []
-
-
-def show_menu():
-    print("\nStudent Budget Planner")
-    print("1. Add income")
-    print("2. Add expense")
-    print("3. View transactions")
-    print("4. View summary")
-    print("5. View category spending")
-    print("6. Exit")
-
-
-def add_income():
-    source = input("Enter income source: ")
-    
-    try:
-        amount = float(input("Enter amount: "))
-    
-    except ValueError:
-        print("Invalid number")
-
-    income = {
-        "type": "income",
-        "name": source,
-        "category": "income",
-        "amount": amount
-    }
-
-    transactions.append(income)
-
-    print("Income added successfully")
-    print("Income added successfully")
-
-
-def add_expense():
-
-    category = input("Enter expense category: ").lower()
-
-    try:
-        amount = float(input("Enter amount: "))
-    
-    except ValueError:
-        print("Invalid number")
-
-    expense = {
-        "type": "expense",
-        "name": category,
-        "category": category,
-        "amount": amount
-    }
-
-    transactions.append(expense)
-
-    print("Expense added successfully")
-
-
-def view_transactions():
-
-    if not transactions:
-        print("\nNo transactions yet")
-        return
-
-    print("\nTransactions")
-
-    for index, transaction in enumerate(transactions, start=1):
-
-        print(f"\n{index}. {transaction['type'].upper()}")
-        print(f"   Name: {transaction['name']}")
-        print(f"   Category: {transaction['category']}")
-        print(f"   Amount: ${transaction['amount']:.2f}")
-
-
-def view_summary():
-
-    total_income = 0
-    total_expenses = 0
-
-    for transaction in transactions:
-
-        if transaction["type"] == "income":
-            total_income += transaction["amount"]
-
-        elif transaction["type"] == "expense":
-            total_expenses += transaction["amount"]
-
-    remaining_balance = total_income - total_expenses
-    savings_rate = (remaining_balance / total_income) * 100
-
-    print("\nFinancial Summary")
-    print(f"\nTotal Income: ${total_income:.2f}")
-    print(f"Total Expenses: ${total_expenses:.2f}")
-    print(f"Remaining Balance: ${remaining_balance:.2f}")
-    print(f"Saving Rate: {savings_rate:.2f}%")
-
-    if remaining_balance < 0:
-        print("Warning: You are overspending")
-
-
-def view_category_summary():
-
-    category_totals = {}
-
-    for transaction in transactions:
-
-        if transaction["type"] == "expense":
-
-            category = transaction["category"]
-            amount = transaction["amount"]
-
-            if category not in category_totals:
-                category_totals[category] = 0
-
-            category_totals[category] += amount
-
-    if not category_totals:
-        print("\nNo expense data available")
-        return
-
-    print("\nSpending By Category")
-
-    for category, total in category_totals.items():
-        print(f"{category}: ${total:.2f}")
-
-
-def main():
-    while True:
-        show_menu()
-
-        choice = input("Choose an option: ")
-
-        if choice == "1":
-            add_income()
-
-        elif choice == "2":
-            add_expense()
-
-        elif choice == "3":
-            view_transactions()
-
-        elif choice == "4":
-            view_summary()
-
-        elif choice == "5":
-            view_category_summary()
-
-        elif choice == "6":
-            print("Goodbye")
-            break
-
-        else:
-            print("Invalid option")
-
-
-main()
-"""
